@@ -1,0 +1,18 @@
+<!-- prettier-ignore -->
+{% extends "base.html" %}
+
+{% block content %}
+<!-- Update Document Form -->
+<div class="card p-5 mb-5 shadow-lg border-0">
+  <h4 class="card-title text-center text-success mb-4">
+    Update Document Template
+  </h4>
+  <form action="" method="post" enctype="multipart/form-data">
+    {% csrf_token %}
+    <div class="form-row">{{ DocForm.as_p }}</div>
+    <button type="submit" class="btn btn-success btn-lg btn-block mt-3">
+      Update Template
+    </button>
+  </form>
+</div>
+{% endblock %}

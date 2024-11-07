@@ -1,0 +1,66 @@
+<!-- prettier-ignore -->
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-5">
+  <!-- Header Section -->
+  <div class="text-center mb-5">
+    <h1 class="display-3 font-weight-bold text-primary">
+      Welcome to PersoDocs
+    </h1>
+    <p class="lead text-secondary">
+      Provide your desired template and get personalized documents in just a few
+      clicks.
+    </p>
+  </div>
+
+  <!-- Upload Document Form -->
+  <div class="card p-5 mb-5 shadow-lg border-0">
+    <h4 class="card-title text-center text-success mb-4">
+      Upload Document Template
+    </h4>
+    <form action="" method="post" enctype="multipart/form-data">
+      {% csrf_token %}
+      <div class="form-row">{{ DocForm.as_p }}</div>
+      <button type="submit" class="btn btn-success btn-lg btn-block mt-3">
+        Upload Template
+      </button>
+    </form>
+  </div>
+
+  <!-- List of Saved Templates -->
+  <div>
+    {% if docs and user.is_authenticated %}
+    <h4 class="mb-4">List of Saved Templates</h4>
+    <div class="list-group">
+      {% for doc in docs %} {% if doc.user == user %}
+      <div
+        class="list-group-item d-flex justify-content-between align-items-center mb-3 border rounded shadow-sm p-3"
+      >
+        <a
+          href="{% url 'doc_detail' doc.id %}"
+          class="text-decoration-none font-weight-bold fs-5"
+        >
+          {{ doc.title }} : uploaded by ({{ doc.user }})
+        </a>
+        <div>
+          <a
+            href="{% url 'update_doc' doc.id %}"
+            class="btn btn-primary btn-sm mx-1"
+            >Update</a
+          >
+          <a
+            href="{% url 'delete_doc' doc.id %}"
+            class="btn btn-danger btn-sm mx-1"
+            >Delete</a
+          >
+        </div>
+      </div>
+      {% endif %} {% endfor %}
+    </div>
+    {% else %}
+    <h4>Upload document to get started</h4>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

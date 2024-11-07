@@ -1,0 +1,23 @@
+<!-- prettier-ignore -->
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-5">
+  <!-- Confirmation Message -->
+  <div class="text-center p-5 shadow-lg border rounded bg-dark">
+    <h3 class="font-weight-bold text-danger mb-4">
+      Are you sure you want to delete "{{ doc.title }}"?
+    </h3>
+    <p class="text-muted">This action cannot be undone.</p>
+
+    <!-- Action Buttons -->
+    <form method="post">
+      {% csrf_token %}
+      <a href="{% url 'home' %}" class="btn btn-secondary btn-lg mr-3">
+        Cancel
+      </a>
+      <button type="submit" class="btn btn-danger btn-lg">Delete</button>
+    </form>
+  </div>
+</div>
+{% endblock %}

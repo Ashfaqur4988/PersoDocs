@@ -1,0 +1,36 @@
+{% extends "base.html" %} {% block content %}
+<div class="container mt-5">
+  <div class="row justify-content-center">
+    <div class="col-md-6">
+      <!-- Registration Card with Bootstrap Shadow -->
+      <div class="card p-4 shadow border-0">
+        <div class="card-body">
+          <!-- Title -->
+          <h2 class="text-center mb-4 text-primary font-weight-bold">
+            Create an Account
+          </h2>
+
+          <!-- Form -->
+          <form method="post" novalidate>
+            {% csrf_token %}
+            <div class="form-group">{{ form.as_p }}</div>
+
+            <!-- Sign Up Button -->
+            <button type="submit" class="btn btn-success btn-lg btn-block mt-3">
+              Sign Up
+            </button>
+          </form>
+
+          <!-- Already have an account? -->
+          <p class="text-center mt-4">
+            Already have an account?
+            <a href="{% url 'login' %}" class="text-primary font-weight-bold"
+              >Login</a
+            >
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
