@@ -183,8 +183,12 @@ def update_doc(request, doc_id):
     if request.method == 'POST':
         form = DocForm(request.POST, request.FILES, instance=doc)
         if form.is_valid():
-            form.save()
-            return redirect('home')
+            try:
+                updated_doc = form
+                updated_doc.save()
+                return redirect('home')
+            except Exception as e:
+                print(f"Error saving document: {e}")
     else:
         form = DocForm(instance=doc)
     return render(request, 'doc_update.html', {'DocForm': form, 'doc': doc})
