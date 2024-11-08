@@ -19,6 +19,14 @@ import glob
 from django.contrib.auth import authenticate, login
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.forms import AuthenticationForm
+import boto3
+
+
+# Get the S3 client
+s3_client = boto3.client('s3', 
+                aws_access_key_id=settings.AWS_ACCESS_KEY_ID,
+                aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY,
+                region_name=settings.AWS_S3_REGION_NAME)
 
 # Create your views here.
 
@@ -36,76 +44,76 @@ def home(request):
         form = DocForm()
         
     docs = Doc.objects.all().order_by('-uploaded_at')
+    print(docs)
     return render(request, 'home.html', {'DocForm': form, 'docs': docs})
 
 
 #display the uploaded document contents & excel upload form
 @login_required
 def doc_detail(request, doc_id):
-    
-    #render the excel upload form
+    # Render the excel upload form
     form = UploadExcelForm()
-    
-    
+
+    # Get the document object
     doc = get_object_or_404(Doc, pk=doc_id)
-    
-    #parse the doc file content
-    doc_path = doc.file.path
+
+    # Get the S3 URL of the document
+    s3_url = doc.file.url  # This will give you the S3 URL of the file
+
+    # Download the file from S3
+    file_obj = s3_client.get_object(Bucket=settings.AWS_STORAGE_BUCKET_NAME, Key=doc.file.name)
+
+    # Read the content of the file into memory
+    file_content = file_obj['Body'].read()
+
+    # Process the content if it's a DOCX file
     doc_content = []
-    if doc_path.endswith('.docx'):
-        document = docx.Document(doc_path)
+    if s3_url.endswith('.docx'):
+        # Use io.BytesIO to treat the file content as a file-like object
+        docx_file = io.BytesIO(file_content)
+        document = docx.Document(docx_file)
+        
         for paragraph in document.paragraphs:
-            # Initialize the paragraph data
             paragraph_content = []
             
-            # Handle alignment (left, center, right, justified)
-            align = paragraph.alignment
             align_class = ""
+            align = paragraph.alignment
             if align == WD_ALIGN_PARAGRAPH.CENTER:
                 align_class = "text-center"
             elif align == WD_ALIGN_PARAGRAPH.RIGHT:
                 align_class = "text-right"
             elif align == WD_ALIGN_PARAGRAPH.JUSTIFY:
                 align_class = "text-justify"
-            # You can apply "text-left" as default (for left-aligned text)
 
             for run in paragraph.runs:
                 run_text = run.text
-                
-                # Check for bold and apply <strong> tag
+
+                # Check for bold, italic, underline, and font properties
                 if run.bold:
                     run_text = f"<strong>{run_text}</strong>"
-                
-                # Check for italic and apply <em> tag
                 if run.italic:
                     run_text = f"<em>{run_text}</em>"
-                
-                # Check for underline and apply <u> tag
                 if run.underline:
                     run_text = f"<u>{run_text}</u>"
                 
-                # Handle font size (in points) and apply to style
                 font_size = None
                 if run.font.size:
-                    font_size = run.font.size.pt  # Get font size in points
+                    font_size = run.font.size.pt
                     run_text = f"<span style='font-size:{font_size}px'>{run_text}</span>"
                 
-                # Handle font color (if it exists)
                 color = None
                 if run.font.color and run.font.color.rgb:
                     color = run.font.color.rgb
-                    color_hex = f"#{color[0]:02x}{color[1]:02x}{color[2]:02x}"  # Convert RGB to hex
+                    color_hex = f"#{color[0]:02x}{color[1]:02x}{color[2]:02x}"
                     run_text = f"<span style='color:{color_hex}'>{run_text}</span>"
                 
-                # Handle font family (if it exists)
-                font_family = run.font.name if run.font.name else 'Arial'  # Default to Arial if no font is set
+                font_family = run.font.name if run.font.name else 'Arial'
                 run_text = f"<span style='font-family:{font_family};'>{run_text}</span>"
                 
-                # Add the formatted text to the paragraph content
                 paragraph_content.append(run_text)
-            
-            # Combine all the runs into one paragraph and apply alignment class
-            doc_content.append(f"<p class='{align_class}'>" + "".join(paragraph_content) + "</p>")    
+
+            doc_content.append(f"<p class='{align_class}'>" + "".join(paragraph_content) + "</p>")
+
     return render(request, 'doc_detail.html', {'doc': doc, 'doc_content': doc_content, 'form': form})
 
 
@@ -121,23 +129,23 @@ def generate_doc(request, doc_id):
         if form.is_valid():
             excel_file = request.FILES['excel_file']
             
-            # Generate a unique filename for the temp Excel file
-            temp_filename = f'temp_{uuid.uuid4()}.xlsx'
-            temp_path = default_storage.save(temp_filename, ContentFile(excel_file.read()))
+            # Load data from the uploaded Excel file directly in memory
+            customer_data = pd.read_excel(excel_file)
             
-            # Load data from Excel file
-            customer_data = pd.read_excel(default_storage.path(temp_path))
-            
-            # Load the specific Word template associated with this doc_id
-            template_path = doc.file.path
-            template = docx.Document(template_path)
+            # Open the specific Word template file associated with this doc_id directly in memory
+            with default_storage.open(doc.file.name, 'rb') as template_file:
+                template_content = template_file.read()
+
+            # Load the Word template as an in-memory document
+            template = docx.Document(io.BytesIO(template_content))
             
             # Create an in-memory zip file to store generated documents
             zip_buffer = io.BytesIO()
             with zipfile.ZipFile(zip_buffer, 'w', zipfile.ZIP_DEFLATED) as zip_file:
                 # Generate personalized documents for each customer
                 for _, row in customer_data.iterrows():
-                    doc_copy = docx.Document(template_path)
+                    # Create a new document from the template for each row in Excel
+                    doc_copy = docx.Document(io.BytesIO(template_content))
                     
                     # Process each paragraph to replace placeholders
                     for paragraph in doc_copy.paragraphs:
@@ -179,44 +187,54 @@ def generate_doc(request, doc_id):
 #update the uploaded templates
 @login_required
 def update_doc(request, doc_id):
+    # Retrieve the document instance from the database
     doc = get_object_or_404(Doc, pk=doc_id)
+
+    # Process the form submission
     if request.method == 'POST':
         form = DocForm(request.POST, request.FILES, instance=doc)
         if form.is_valid():
             try:
-                updated_doc = form
-                updated_doc.save()
+                # Save the form, and the file will be saved to S3 automatically
+                form.save()
                 return redirect('home')
             except Exception as e:
                 print(f"Error saving document: {e}")
+                return render(request, 'doc_update.html', {
+                    'DocForm': form,
+                    'doc': doc,
+                    'error_message': f"An error occurred while saving the document: {e}"
+                })
     else:
+        # If not a POST request, just load the form with the current doc instance
         form = DocForm(instance=doc)
     return render(request, 'doc_update.html', {'DocForm': form, 'doc': doc})
 
 #delete the uploaded templates
 login_required
 def delete_doc(request, doc_id):
+    # Retrieve the document instance from the database
     doc = get_object_or_404(Doc, pk=doc_id)
+    
     if request.method == 'POST':
-        # Delete the associated document file if it exists
-        if doc.file and os.path.exists(doc.file.path):
-            os.remove(doc.file.path)
-        
-        # Delete the temporary Excel file if it exists
-        temp_dir = settings.MEDIA_ROOT  # or another directory where temporary files are stored
+        # Delete the associated document file on S3 if it exists
+        if doc.file:
+            doc.file.delete(save=False)  # Deletes the file on S3 without saving the model again
+
+        # Delete any temporary Excel files if they exist
+        temp_dir = settings.MEDIA_ROOT  # Assuming temporary files are stored here
         temp_files_pattern = os.path.join(temp_dir, 'temp_*.xlsx')
-        # Find and delete all matching temp files
         for temp_file in glob.glob(temp_files_pattern):
             try:
                 os.remove(temp_file)
             except OSError as e:
-                print(f"Error deleting file {temp_file}: {e}")
-        
+                print(f"Error deleting temporary file {temp_file}: {e}")
+
         # Delete the Doc instance from the database
         doc.delete()
         return redirect('home')
-    return render(request, 'doc_delete.html', {'doc': doc})
 
+    return render(request, 'doc_delete.html', {'doc': doc})
 
 #user guide view
 def user_guide(request):
