@@ -16,7 +16,7 @@ SECRET_KEY = 'django-insecure-b=fyd!&c7nkzse!!n6ut8##i7#4w2u1n6e%dn^8vcg0&_pr(e(
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['https://persodocs.onrender.com', 'localhost']
 
 
 # Application definition
