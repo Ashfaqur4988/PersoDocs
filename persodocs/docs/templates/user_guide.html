@@ -2,6 +2,60 @@
 {% extends "base.html" %}
 
 {% block content %}
-<h1>User Guide</h1>
-<p>Easy steps to get started</p>
+<div class="container my-5">
+  <h1 class="text-center mb-4">User Guide</h1>
+  <p class="lead text-center">Easy steps to get started</p>
+
+  <div class="steps mt-4">
+    <div class="step mb-4">
+      <h4>Step 1:</h4>
+      <p>Login to your account or create a new one.</p>
+      <p class="text-muted">
+        <em
+          >(For testing, use the following: <strong>username:</strong> "mike"
+          and <strong>password:</strong> "Mike@123")</em
+        >
+      </p>
+    </div>
+
+    <div class="step mb-4">
+      <h4>Step 2:</h4>
+      <p>
+        Create your Word document (<code>.docx</code>) template on your system.
+      </p>
+      <p>
+        <b class="text-danger">Important</b>: use two curly braces and inside
+        them give the column name present in your list (Excel file):
+        <b> e.g., &#123;&#123;placeholder_name&#125;&#125;</b>
+      </p>
+
+      <p>
+        This placeholder will be replaced with data from your Excel file to
+        create personalized documents.
+      </p>
+      <p>
+        Give a title to the document and upload the template. It should appear
+        in the list of uploaded files.
+      </p>
+    </div>
+
+    <div class="step mb-4">
+      <h4>Step 3:</h4>
+      <p>
+        Upload an Excel file (<code>.xlsx</code>) with columns matching the
+        placeholder names in the template, e.g., <code>{{ name }}</code>,
+        <code>{{ address }}</code>.
+      </p>
+    </div>
+
+    <div class="step mb-4">
+      <h4>Step 4:</h4>
+      <p>
+        Click on the <strong>"Upload and Generate"</strong> button to generate
+        documents.
+      </p>
+      <p>The generated documents will be downloaded as a zip file.</p>
+    </div>
+  </div>
+</div>
 {% endblock %}
