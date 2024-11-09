@@ -130,7 +130,7 @@ LOGOUT_URL = '/accounts/logout'
 LOGIN_REDIRECT_URL = '/'
 LOGOUT_REDIRECT_URL = '/'
 
-
+# AWS S3 Configuration
 AWS_ACCESS_KEY_ID = os.getenv('aws_access_key')
 AWS_SECRET_ACCESS_KEY = os.getenv('aws_secret_access_key')
 AWS_STORAGE_BUCKET_NAME = os.getenv('aws_storage_bucket_name')
@@ -142,7 +142,7 @@ AWS_S3_CUSTOM_DOMAIN = f'{AWS_STORAGE_BUCKET_NAME}.s3.amazonaws.com'
 AWS_S3_URL_PROTOCOL = 'https'
 AWS_S3_USE_SSL = True
 AWS_S3_VERIFY = True
-
+AWS_QUERYSTRING_AUTH = False
 AWS_DEFAULT_ACL = None
 
 STORAGES = {
