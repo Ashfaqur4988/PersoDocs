@@ -145,19 +145,22 @@ AWS_S3_VERIFY = True
 AWS_QUERYSTRING_AUTH = False
 AWS_DEFAULT_ACL = None
 
+#storages
+
 STORAGES = {
     'default': {
-        'BACKEND': 'storages.backends.s3boto3.S3StaticStorage',
-    },
-    
-    'staticfiles': {
         'BACKEND': 'storages.backends.s3boto3.S3Boto3Storage',
+    },
+    'staticfiles': {
+        'BACKEND': 'storages.backends.s3boto3.S3StaticStorage',
     },
 }
 
+
 # Static and media file configuration
 STATIC_URL = f'{AWS_S3_URL_PROTOCOL}://{AWS_S3_CUSTOM_DOMAIN}/static/'
-STATICFILES_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
+STATICFILES_STORAGE = 'storages.backends.s3boto3.S3StaticStorage'
+
 
 MEDIA_URL = f'{AWS_S3_URL_PROTOCOL}://{AWS_S3_CUSTOM_DOMAIN}/media/'
 DEFAULT_FILE_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
